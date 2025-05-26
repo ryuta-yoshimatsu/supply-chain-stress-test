@@ -4,13 +4,14 @@
 [![CLOUD](https://img.shields.io/badge/CLOUD-CHANGE_ME-blue?logo=googlecloud&style=for-the-badge)](https://databricks.com/try-databricks)
 
 ## Business Problem
-WHAT IS THE BUSINESS PROBLEM ADDRESSED BY THIS SOLUTION
+
+<img src='https://github.com/ryuta-yoshimatsu/supply_chain_stress_test/blob/main/images/cartoon.png' width=800>
 
 ## Reference Architecture
 IMAGE TO REFERENCE ARCHITECTURE
 
 ## Authors
-<john.doe@databricks.com>
+<ryuta.yoshimatsu@databricks.com>
 
 ## Project support 
 
