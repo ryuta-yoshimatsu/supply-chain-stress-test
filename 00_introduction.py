@@ -15,7 +15,7 @@
 # MAGIC
 # MAGIC What can be done to prepare for such disruptive events? Instead of reacting in panic to last-minute changes, can companies make informed decisions and take proactive steps before crises unfold? A well-cited research paper by MIT professor David Simchi-Levi presents a compelling, data-driven approach to this challenge. At the core of his method is the creation of a digital twin of the supply chain—built using real operational data—to simulate a wide range of disruption scenarios. By analyzing how the network responds, companies can assess potential impacts, uncover hidden vulnerabilities, and identify redundant investments. This process, known as stress testing, has become widely adopted across industries.
 # MAGIC
-# MAGIC The remainder notebooks provide a detailed implementation of a solution and perform a comprehensive analysis on Databricks.
+# MAGIC The remainder notebooks provide a detailed implementation of the solution and perform a comprehensive analysis on Databricks.
 
 # COMMAND ----------
 

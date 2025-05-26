@@ -4,7 +4,45 @@
 
 # COMMAND ----------
 
-print('Hello, Databricks')
+# MAGIC %pip install -r ./requirements.txt --quiet
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+import random
+import numpy as np
+import pandas as pd
+import scripts.utils as utils
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Build the three-tier network exactly with “close” Tier 3 → Tier 2 links (each Tier-3 node picks the nearest Tier-2 node, with a random tie-break when it sits between two). Guarantee no isolation – every Tier-1 node receives ≥ 1 edge from Tier-2, and every Tier-2 node receives ≥ 1 edge from Tier-3 (the assertion would fail otherwise).
+
+# COMMAND ----------
+
+# Generate a synthetic 3-tier network dataset for optimization 
+dataset = utils.generate_data(N1=5, N2=10, N3=20)
+#dataset = utils.generate_data(N1=200, N2=500, N3=1000)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Visualise the tiers cleanly with distinctive shapes (●, ■, ▲) and a layered layout.
+
+# COMMAND ----------
+
+# Visualizes the 3-tier network
+utils.visualize_network(dataset)
+
+# COMMAND ----------
+
+print("Tier sizes  :", len(dataset['tier1']), len(dataset['tier2']), len(dataset['tier3']))
+print("Edges       :", len(dataset['edges']))
+print("f:", {j: dataset['f'][j] for j in dataset['tier1']})
+print("d:", {j: dataset['d'][j] for j in dataset['tier1']})
+print("s:", {j: dataset['s'][j] for j in dataset['tier1']})
+print("c:", {j: dataset['c'][j] for j in dataset['tier2']})
 
 # COMMAND ----------
 
