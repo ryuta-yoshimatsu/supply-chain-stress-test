@@ -51,9 +51,10 @@ highest_risk_nodes
 
 # COMMAND ----------
 
-model_pickled = highest_risk_nodes["pickled_model"].values[0]  
-model = cloudpickle.loads(model_pickled)
+disrupted = ["T2_10"]
+df = utils.build_and_solve_multi_tier_ttr(dataset, disrupted, disrupted_nodes[disrupted_node], True)
 
+model = df["model"].values[0]
 records = []
 for v in model.component_data_objects(ctype=pyo.Var, active=True):
     idx  = v.index()
@@ -67,7 +68,10 @@ for v in model.component_data_objects(ctype=pyo.Var, active=True):
     }
     records.append(record)
 
-pd.DataFrame.from_records(records)
+for record in records:
+        record["index"] = (record["index"],) if isinstance(record["index"], str) else record["index"]
+
+display(pd.DataFrame.from_records(records))
 
 # COMMAND ----------
 

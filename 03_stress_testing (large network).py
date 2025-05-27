@@ -1,54 +1,139 @@
 # Databricks notebook source
+catalog = "ryuta"
+schema = "supply_chain_stress_test"
+volume = "init_script"
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC This solution accelerator notebook is available at [Databricks Industry Solutions](https://github.com/databricks-industry-solutions/).
 
 # COMMAND ----------
 
-import ray
-import mlflow
-import uuid
-import pandas as pd
-import os
+#%sh apt-get update && apt-get install -y coinor-cbc
 
-# Start Ray (on cluster driver, workers will connect automatically)
-if not ray.is_initialized():
-    ray.init(address="auto")
-    
+# COMMAND ----------
+
+# overwrite if the file already exists
+dbutils.fs.put(f"/Volumes/{catalog}/{schema}/{volume}/install_cbc.sh", open("./scripts/install_cbc.sh").read(), True)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Restart cluster with the init script
+
+# COMMAND ----------
+
+# MAGIC %pip install -r ./requirements.txt --quiet
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+import os
+import mlflow
+import random
+import numpy as np
+import pandas as pd
+import cloudpickle
+import pyomo.environ as pyo
+import scripts.utils as utils
+import ray
+from ray.util.spark import setup_ray_cluster, shutdown_ray_cluster, MAX_NUM_WORKER_NODES
+
+# Generate a synthetic 3-tier network dataset for optimization 
+dataset = utils.generate_data(N1=200, N2=500, N3=1000)
+
+# Assign a random ttr to each disrupted node
+random.seed(777)
+disrupted_nodes = {node: random.randint(1, 10) for node in dataset['tier2'] + dataset['tier3']}
+
+# COMMAND ----------
+
+# Cluster cleanup
+restart = True
+if restart is True:
+  try:
+    shutdown_ray_cluster()
+  except:
+    pass
+
+  try:
+    ray.shutdown()
+  except:
+    pass
+
+# Set configs based on your cluster size
+max_worker_nodes = 8        # total cpu to use in each worker node (total_cores - 1 to leave one core for spark)
+num_cpus_worker_node = 8     # Cores to use in driver node (total_cores - 1)
+
+# If the cluster has four workers with 8 CPUs each as an example
+setup_ray_cluster(
+  max_worker_nodes=8, 
+  num_cpus_worker_node=8, 
+  num_gpus_worker_node=0,
+  )
+
+# Pass any custom configuration to ray.init
+ray.init(ignore_reinit_error=True)
+
+# COMMAND ----------
+
 @ray.remote
-def run_and_log_ray(scenario, batch_id):
-    mlflow.set_experiment("/SupplyChainStressTest")
-    with mlflow.start_run(run_name=scenario["name"]):
-        mlflow.set_tag("batch_id", batch_id)
-        mlflow.log_param("scenario_name", scenario["name"])
-        mlflow.log_param("factory_down", scenario.get("factory_down", "None"))
-        results = run_scenario(
-            scenario_name=scenario["name"],
-            factory_down=scenario.get("factory_down")
-        )
-        mlflow.log_metric("total_cost", results["cost"])
-        mlflow.log_metric("total_unmet_demand", results["unmet"])
-        # Log shipping plan
-        df_ship = results.get("shipping_plan_df")
-        if df_ship is not None:
-            output_path = f"/tmp/shipping_plan_{scenario['name']}.csv"
-            df_ship.to_csv(output_path, index=False)
-            mlflow.log_artifact(output_path)
-            os.remove(output_path)
-        return results
-scenario_list = [
-    {"name": "Baseline", "factory_down": None},
-    {"name": "F1_Down", "factory_down": "F1"},
-    {"name": "F2_Down", "factory_down": "F2"},
-    # Add more for scaling...
+def solve_for_scenario(nodes, ttr, data):
+    """Run the Pyomo model for a single disrupted scenario."""
+    disrupted = [nodes]
+    return utils.build_and_solve_multi_tier_ttr(data, disrupted, ttr)
+
+# Launch a Ray task per scenario
+futures = [
+    solve_for_scenario.remote(nodes, ttr, dataset)
+    for nodes, ttr in disrupted_nodes.items()
 ]
-batch_id = str(uuid.uuid4())
-# Dispatch all tasks
-futures = [run_and_log_ray.remote(s, batch_id) for s in scenario_list]
-results = ray.get(futures)  # Gather results
-# To DataFrame
-results_df = pd.DataFrame(results)
-results_df.to_csv("ray_scenario_results.csv", index=False)
-results_df.head()
+
+# Gather results back to the driver
+objectives = ray.get(futures)
+
+# Optionally combine into one Pandas / Spark DataFrame
+combined_df = pd.concat(objectives, ignore_index=True)
+
+spark.createDataFrame(combined_df).write.mode("overwrite").saveAsTable(f"ryuta.supply_chain_stress_test.result")
+
+# COMMAND ----------
+
+highest_risk_nodes = combined_df.sort_values(by="objective_value", ascending=False)[0:10]
+highest_risk_nodes
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+model_pickled = highest_risk_nodes["pickled_model"].values[0]  
+model = cloudpickle.loads(model_pickled)
+
+records = []
+for v in model.component_data_objects(ctype=pyo.Var, active=True):
+    idx  = v.index()
+    record  = {
+        "var_name"  : v.parent_component().name,
+        "index"     : idx,
+        "value"     : pyo.value(v),
+        "lb"        : v.lb,
+        "ub"        : v.ub,
+        "fixed"     : v.fixed,
+    }
+    records.append(record)
+
+pd.DataFrame.from_records(records)
 
 # COMMAND ----------
 
