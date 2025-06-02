@@ -29,6 +29,11 @@ dataset = utils.generate_data(N1=5, N2=10, N3=20)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Multi-Tier Time To Recover (TTR) Model
+
+# COMMAND ----------
+
 # Assign a random ttr to each disrupted node
 random.seed(777)
 disrupted_nodes = {node: random.randint(1, 10) for node in dataset['tier2'] + dataset['tier3']}
@@ -46,7 +51,7 @@ display(objectives)
 
 # COMMAND ----------
 
-highest_risk_nodes = objectives.sort_values(by="objective_value", ascending=False)[0:5]
+highest_risk_nodes = objectives.sort_values(by="profit_loss", ascending=False)[0:5]
 highest_risk_nodes
 
 # COMMAND ----------
@@ -72,6 +77,30 @@ for record in records:
         record["index"] = (record["index"],) if isinstance(record["index"], str) else record["index"]
 
 display(pd.DataFrame.from_records(records))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Multi-Tier Time To Survive (TTS) Model
+
+# COMMAND ----------
+
+tts = []
+for disrupted_node in disrupted_nodes:
+    disrupted = [disrupted_node]
+    df = utils.build_and_solve_multi_tier_tts(dataset, disrupted)
+    df["ttr"] = disrupted_nodes[disrupted_node]
+    tts.append(df)
+
+# COMMAND ----------
+
+tts = pd.concat(tts, ignore_index=True)
+display(tts)
+
+# COMMAND ----------
+
+# Show where tts is shorter than ttr
+display(tts[tts["tts"] < tts["ttr"]])
 
 # COMMAND ----------
 

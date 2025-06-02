@@ -14,6 +14,11 @@ volume = "init_script"
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC install_cbc.sh script must be specified as an init script for the cluster.
+
+# COMMAND ----------
+
 # overwrite if the file already exists
 dbutils.fs.put(f"/Volumes/{catalog}/{schema}/{volume}/install_cbc.sh", open("./scripts/install_cbc.sh").read(), True)
 
@@ -102,38 +107,6 @@ spark.createDataFrame(combined_df).write.mode("overwrite").saveAsTable(f"ryuta.s
 
 highest_risk_nodes = combined_df.sort_values(by="objective_value", ascending=False)[0:10]
 highest_risk_nodes
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-model_pickled = highest_risk_nodes["pickled_model"].values[0]  
-model = cloudpickle.loads(model_pickled)
-
-records = []
-for v in model.component_data_objects(ctype=pyo.Var, active=True):
-    idx  = v.index()
-    record  = {
-        "var_name"  : v.parent_component().name,
-        "index"     : idx,
-        "value"     : pyo.value(v),
-        "lb"        : v.lb,
-        "ub"        : v.ub,
-        "fixed"     : v.fixed,
-    }
-    records.append(record)
-
-pd.DataFrame.from_records(records)
 
 # COMMAND ----------
 
