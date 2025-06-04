@@ -336,7 +336,7 @@ def build_and_solve_multi_tier_ttr(dataset: dict, disrupted: list[str], ttr: flo
     m.Capacity = pyo.Constraint(m.NODES, rule=capacity_rule)
 
     # Solve
-    solver = pyo.SolverFactory("cbc")  # choose any LP/MIP solver that Pyomo can see (CBC, Gurobi, CPLEX, HiGHS, …)
+    solver = pyo.SolverFactory("highs")  # choose any LP/MIP solver that Pyomo can see (CBC, Gurobi, CPLEX, HiGHS, …)
     result = solver.solve(m, tee=False)
 
     if return_model:
@@ -470,7 +470,7 @@ def build_and_solve_multi_tier_tts(dataset: dict, disrupted: list[str], return_m
     m.Capacity = pyo.Constraint(m.NODES, rule=capacity_rule)
 
     # Solve
-    solver = pyo.SolverFactory("cbc")  # choose any LP/MIP solver that Pyomo can see (CBC, Gurobi, CPLEX, HiGHS, …)
+    solver = pyo.SolverFactory("highs")  # choose any LP/MIP solver that Pyomo can see (CBC, Gurobi, CPLEX, HiGHS, …)
     result = solver.solve(m, tee=False)
 
     if return_model:
