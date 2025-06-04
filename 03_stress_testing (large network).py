@@ -1,14 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC This solution accelerator notebook is available at [Databricks Industry Solutions](https://github.com/databricks-industry-solutions/).
-# MAGIC 
+# MAGIC
 # MAGIC ## Overview
 # MAGIC This notebook demonstrates how to perform large-scale supply chain stress testing using distributed computation with Ray on Databricks. It covers data generation, Ray cluster setup, distributed optimization, and result analysis.
-
-# COMMAND ----------
-
-catalog = "mlops_pj"
-schema = "supply_chain_stress_test"
 
 # COMMAND ----------
 
@@ -25,17 +20,24 @@ schema = "supply_chain_stress_test"
 # COMMAND ----------
 
 
- # Install Required Packages
+# Install Required Packages
 # The following cell installs all required Python packages as specified in the requirements.txt file and restarts the Python environment to ensure all dependencies are loaded.
 
-# MAGIC %pip install -r ./requirements.txt --quiet
-# MAGIC dbutils.library.restartPython()
+%pip install -r ./requirements.txt --quiet
+dbutils.library.restartPython()
+
+# COMMAND ----------
+
+catalog = "mlops_pj"
+schema = "supply_chain_stress_test"
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Import Libraries and Generate Synthetic Data
 # MAGIC Here, we import all necessary libraries and generate a synthetic 3-tier supply chain network dataset for optimization. We also assign random time-to-recovery (ttr) values to each disrupted node.
+
+# COMMAND ----------
 
 import os
 import random
@@ -57,6 +59,8 @@ disrupted_nodes = {node: random.randint(1, 10) for node in dataset['tier2'] + da
 # MAGIC ## Retrieve Databricks Cluster Information
 # MAGIC This function retrieves the minimum and maximum number of worker nodes from the Databricks cluster context using the REST API. This information is used to configure the Ray cluster for distributed computation.
 
+# COMMAND ----------
+
 # Databricks-only: get cluster context and min/max nodes
 def get_min_max_nodes():
     try:
@@ -73,7 +77,7 @@ def get_min_max_nodes():
             return response['autoscale']["min_workers"], response['autoscale']["max_workers"]
     except Exception as e:
         print(f"Warning: Could not fetch min/max nodes from Databricks context: {e}")
-    return 1, 1  # fallback for local/testing
+    return 1, response['num_workers']  # fallback for local/testing
 
 min_node, max_node = get_min_max_nodes()
 
@@ -82,6 +86,8 @@ min_node, max_node = get_min_max_nodes()
 # MAGIC %md
 # MAGIC ## Ray Cluster Initialization
 # MAGIC Ray is a distributed execution framework that enables scalable parallel computation. Here, we initialize a Ray cluster on Databricks using the `setup_ray_cluster` utility. The number of worker nodes and CPU cores per node are set based on the Databricks cluster configuration. Environment variables for Databricks authentication are also set for Ray workers.
+
+# COMMAND ----------
 
 import ray
 from ray.util.spark import setup_ray_cluster, shutdown_ray_cluster
@@ -100,7 +106,7 @@ if restart is True:
 
 # Set configs based on your cluster size
 num_cpu_cores_per_worker = 4 # total cpu to use in each worker node 
-num_cpus_head_node = 4 # Cores to use in driver node (total_cores - 2)
+num_cpus_head_node = 4 # Cores to use in driver node (total_cores - 4)
 
 # Set databricks credentials as env vars for Ray workers
 try:
@@ -124,9 +130,8 @@ os.environ['RAY_ADDRESS'] = ray_conf[0]
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Check Pyomo Solver Availability
-# MAGIC This cell checks the availability of the 'highs' solver in Pyomo, which is used for optimization. If unavailable, ensure the solver is installed in your environment.
+# Check Pyomo Solver Availability
+# This cell checks the availability of the 'highs' solver in Pyomo, which is used for optimization. If unavailable, ensure the solver is installed in your environment.
 
 for name in ["highs"]:
     print(name, pyo.SolverFactory(name).available())
@@ -137,6 +142,8 @@ for name in ["highs"]:
 # MAGIC ## Prepare Data for Distributed Computation
 # MAGIC Convert the disrupted nodes dictionary to a pandas DataFrame, then to a Ray Dataset for distributed processing.
 
+# COMMAND ----------
+
 df = pd.DataFrame.from_dict(disrupted_nodes, orient='index', columns=['ttr']).reset_index(names='node')
 df = ray.data.from_pandas(df)
 
@@ -145,6 +152,9 @@ df = ray.data.from_pandas(df)
 # MAGIC %md
 # MAGIC ## Define the Solver Class
 # MAGIC The `Solver` class encapsulates the logic for running the Pyomo model for each disrupted scenario. It is designed to be used with Ray's distributed map operation.
+# MAGIC
+
+# COMMAND ----------
 
 class Solver:
     """
@@ -169,6 +179,8 @@ class Solver:
 # MAGIC ## Test the Solver on a Single Row
 # MAGIC This cell tests the `Solver` class on a single row to ensure correctness before distributed execution.
 
+# COMMAND ----------
+
 Solver()(df.take(1)[0])
 
 # COMMAND ----------
@@ -177,8 +189,10 @@ Solver()(df.take(1)[0])
 # MAGIC ## Distributed Computation with Ray Data API
 # MAGIC The following cell demonstrates distributed computation using Ray's Data API:
 # MAGIC - The Ray Dataset is repartitioned into 300 partitions to increase parallelism and optimize resource utilization across the cluster.
-# MAGIC - The `map` function applies the `Solver` class to each partition in parallel, with each task using 1 CPU and a concurrency window of (3, 20).
+# MAGIC - The `map` function applies the `Solver` class to each partition in parallel, with each task using 1 CPU and a concurrency window of (3, 20) you can adjust the concurreny based on your cluster setup.
 # MAGIC - The results are collected as a pandas DataFrame for further analysis.
+
+# COMMAND ----------
 
 df_new = df.repartition(300).map(Solver,
        num_cpus=1,
@@ -191,6 +205,8 @@ pandas_df = df_new.to_pandas()
 # MAGIC ## Save Results to Delta Table
 # MAGIC The results are saved to a Delta table for persistent storage and further analysis using Spark SQL. This step is Databricks-specific.
 
+# COMMAND ----------
+
 # Databricks-only: save to Delta table
 try:
     spark.createDataFrame(pandas_df).write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.result")
@@ -202,6 +218,8 @@ except Exception as e:
 # MAGIC %md
 # MAGIC ## Analyze Highest Risk Nodes
 # MAGIC The top 10 nodes with the highest profit loss are identified for further investigation.
+
+# COMMAND ----------
 
 highest_risk_nodes = pandas_df.sort_values(by="profit_loss", ascending=False)[0:10]
 highest_risk_nodes
