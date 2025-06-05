@@ -1,9 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC This solution accelerator notebook is available at [Databricks Industry Solutions](https://github.com/databricks-industry-solutions/).
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC # Stress Test a Large Network and Analyze Results
 # MAGIC
-# MAGIC ## Overview
-# MAGIC This notebook demonstrates how to perform large-scale supply chain stress testing using distributed computation with Ray on Databricks. It covers data generation, Ray cluster setup, distributed optimization, and result analysis.
+# MAGIC This notebook demonstrates how to perform large-scale supply chain stress testing using distributed computation with Ray on Databricks. It covers Ray cluster setup, distributed optimization, and result analysis.
 
 # COMMAND ----------
 
@@ -19,16 +23,14 @@
 
 # COMMAND ----------
 
-
-# Install Required Packages
+# DBTITLE 1,Install Required Packages
 # The following cell installs all required Python packages as specified in the requirements.txt file and restarts the Python environment to ensure all dependencies are loaded.
-
 %pip install -r ./requirements.txt --quiet
 dbutils.library.restartPython()
 
 # COMMAND ----------
 
-catalog = "mlops_pj"
+catalog = "ryuta"
 schema = "supply_chain_stress_test"
 
 # COMMAND ----------
@@ -41,17 +43,21 @@ schema = "supply_chain_stress_test"
 
 import os
 import random
+import numpy as np
 import pandas as pd
 import pyomo.environ as pyo
 from pyomo.common.timing import TicTocTimer
 import scripts.utils as utils
 
 # Generate a synthetic 3-tier network dataset for optimization 
-dataset = utils.generate_data(N1=200, N2=500, N3=1000)
+#dataset = utils.generate_data(N1=200, N2=500, N3=1000)
+dataset = utils.generate_data(N1=100, N2=200, N3=400)
 
 # Assign a random ttr (time-to-recovery) to each disrupted node
 random.seed(777)
 disrupted_nodes = {node: random.randint(1, 10) for node in dataset['tier2'] + dataset['tier3']}
+
+display(dict(list(disrupted_nodes.items())[:10]))
 
 # COMMAND ----------
 
@@ -150,13 +156,14 @@ df = ray.data.from_pandas(df)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Define the Solver Class
-# MAGIC The `Solver` class encapsulates the logic for running the Pyomo model for each disrupted scenario. It is designed to be used with Ray's distributed map operation.
+# MAGIC ## TTR Model
 # MAGIC
+# MAGIC ### Define the Solver Class
+# MAGIC The `TTRSolver` class encapsulates the logic for running the Pyomo model for each disrupted scenario. It is designed to be used with Ray's distributed map operation.
 
 # COMMAND ----------
 
-class Solver:
+class TTRSolver:
     """
     Callable class to run the Pyomo model for a single disrupted scenario.
     """
@@ -176,17 +183,17 @@ class Solver:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Test the Solver on a Single Row
+# MAGIC ### Test the Solver on a Single Row
 # MAGIC This cell tests the `Solver` class on a single row to ensure correctness before distributed execution.
 
 # COMMAND ----------
 
-Solver()(df.take(1)[0])
+TTRSolver()(df.take(1)[0])
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Distributed Computation with Ray Data API
+# MAGIC ### Distributed Computation with Ray Data API
 # MAGIC The following cell demonstrates distributed computation using Ray's Data API:
 # MAGIC - The Ray Dataset is repartitioned into 300 partitions to increase parallelism and optimize resource utilization across the cluster.
 # MAGIC - The `map` function applies the `Solver` class to each partition in parallel, with each task using 1 CPU and a concurrency window of (3, 20) you can adjust the concurreny based on your cluster setup.
@@ -194,7 +201,7 @@ Solver()(df.take(1)[0])
 
 # COMMAND ----------
 
-df_new = df.repartition(300).map(Solver,
+df_new = df.repartition(300).map(TTRSolver,
        num_cpus=1,
        concurrency=(3,20))
 pandas_df = df_new.to_pandas()
@@ -202,21 +209,21 @@ pandas_df = df_new.to_pandas()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Save Results to Delta Table
+# MAGIC ### Save Results to Delta Table
 # MAGIC The results are saved to a Delta table for persistent storage and further analysis using Spark SQL. This step is Databricks-specific.
 
 # COMMAND ----------
 
 # Databricks-only: save to Delta table
 try:
-    spark.createDataFrame(pandas_df).write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.result")
+    spark.createDataFrame(pandas_df).write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.stress_test_result_ttr")
 except Exception as e:
     print(f"Warning: Could not save to Delta table: {e}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Analyze Highest Risk Nodes
+# MAGIC ### Analyze Highest Risk Nodes
 # MAGIC The top 10 nodes with the highest profit loss are identified for further investigation.
 
 # COMMAND ----------
@@ -226,11 +233,79 @@ highest_risk_nodes
 
 # COMMAND ----------
 
+np.random.seed(42)
+pandas_df["total_spend"] = np.abs(np.random.normal(loc=0, scale=50, size=len(pandas_df))).astype(int)
+
+# COMMAND ----------
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+plt.scatter(pandas_df["profit_loss"], pandas_df["total_spend"])
+plt.xlabel("Profit/Loss")
+plt.ylabel("Total Spend")
+plt.title("Scatter Plot of Total Spend vs Lost Profit")
+
+rect_1 = patches.Rectangle((1900, -5), 1100, 105, linewidth=2, edgecolor='red', facecolor='none')
+rect_2 = patches.Rectangle((-50, 100), 1000, 75, linewidth=2, edgecolor='red', facecolor='none')
+plt.gca().add_patch(rect_1)
+plt.gca().add_patch(rect_2)
+
+plt.show()
+
+# COMMAND ----------
+
 # MAGIC %md
-# MAGIC ## License and Third-Party Libraries
+# MAGIC ## TTS Model
+# MAGIC
+# MAGIC ### Define the Solver Class
+# MAGIC The `TTSSolver` class encapsulates the logic for running the Pyomo model for each disrupted scenario. It is designed to be used with Ray's distributed map operation.
+# MAGIC
+
+# COMMAND ----------
+
+class TTSSolver:
+    """
+    Callable class to run the Pyomo model for a single disrupted scenario.
+    """
+    
+    def __init__(self, data=dataset):
+        self.data = dataset
+
+    def __call__(self, row):
+        """Run the Pyomo model for a single disrupted scenario."""
+        disrupted = [row['node']]
+        # Call the utility function to build and solve the optimization model
+        solver = utils.build_and_solve_multi_tier_tts(self.data, disrupted)
+        row['termination_condition'] = str(solver.iloc[0]['termination_condition'])
+        row['tts'] = solver.iloc[0]['tts']
+        return row
+
+# COMMAND ----------
+
+TTSSolver()(df.take(1)[0])
+
+# COMMAND ----------
+
+df_new = df.repartition(300).map(TTSSolver,
+                                 num_cpus=1,
+                                 concurrency=(3,20))
+pandas_df = df_new.to_pandas()
+
+# COMMAND ----------
+
+# Databricks-only: save to Delta table
+try:
+    spark.createDataFrame(pandas_df).write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.stress_test_result_tts")
+except Exception as e:
+    print(f"Warning: Could not save to Delta table: {e}")
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC &copy; 2025 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source].  All included or referenced third party libraries are subject to the licenses set forth below.
 # MAGIC
 # MAGIC | library                                | description             | license    | source                                              |
 # MAGIC |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
 # MAGIC | pyomo | An object-oriented algebraic modeling language in Python for structured optimization problems | BSD | https://pypi.org/project/pyomo/
-# MAGIC | highspy | Linear optimization solver (HiGHS) | MIT | https://github.com/ERGO-Code/HiGHS
+# MAGIC | highspy | Linear optimization solver (HiGHS) | MIT | https://pypi.org/project/highspy/

@@ -4,6 +4,13 @@
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC # Prepare the Dataset
+# MAGIC
+# MAGIC TODO: This notebook demonstrates...
+
+# COMMAND ----------
+
 # MAGIC %pip install -r ./requirements.txt --quiet
 # MAGIC dbutils.library.restartPython()
 
@@ -23,7 +30,6 @@ import scripts.utils as utils
 
 # Generate a synthetic 3-tier network dataset for optimization 
 dataset = utils.generate_data(N1=5, N2=10, N3=20)
-#dataset = utils.generate_data(N1=200, N2=500, N3=1000)
 
 # COMMAND ----------
 
@@ -37,6 +43,11 @@ utils.visualize_network(dataset)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC TODO: Walk through each variable
+
+# COMMAND ----------
+
 print("Tier sizes  :", len(dataset['tier1']), len(dataset['tier2']), len(dataset['tier3']))
 print("Edges       :", len(dataset['edges']))
 print("f:", {j: dataset['f'][j] for j in dataset['tier1']})
@@ -46,10 +57,14 @@ print("c:", {j: dataset['c'][j] for j in dataset['tier2']})
 
 # COMMAND ----------
 
+dataset
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC &copy; 2025 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source].  All included or referenced third party libraries are subject to the licenses set forth below.
 # MAGIC
 # MAGIC | library                                | description             | license    | source                                              |
 # MAGIC |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
 # MAGIC | pyomo | An object-oriented algebraic modeling language in Python for structured optimization problems | BSD | https://pypi.org/project/pyomo/
-# MAGIC | coinor-cbc | COIN-OR Branch-and-Cut solver | Eclipse Public License - v 2.0 | https://github.com/coin-or/Cbc
+# MAGIC | highspy | Linear optimization solver (HiGHS) | MIT | https://pypi.org/project/highspy/

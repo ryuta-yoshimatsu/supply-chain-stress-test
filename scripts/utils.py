@@ -5,7 +5,6 @@ from itertools import product
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import cloudpickle
 import pyomo.environ as pyo
 
 def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
@@ -67,7 +66,7 @@ def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
 
     # Generate part types and supplier part types
     n = math.ceil(len(tier2) / 3) + math.ceil(len(tier3) / 2)
-    part_types = list(map(''.join, product(string.ascii_lowercase, repeat=2)))[:n]
+    part_types = list(map(''.join, product(string.ascii_lowercase, repeat=3)))[:n]
 
     supplier_part_type = {}
 

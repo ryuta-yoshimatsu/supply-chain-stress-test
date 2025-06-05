@@ -4,7 +4,10 @@
 
 # COMMAND ----------
 
-# MAGIC %sh apt-get update && apt-get install -y coinor-cbc
+# MAGIC %md
+# MAGIC # Stress Test a Small Network and Analyze Results
+# MAGIC
+# MAGIC TODO: This notebook demonstrates
 
 # COMMAND ----------
 
@@ -18,7 +21,6 @@ import mlflow
 import random
 import numpy as np
 import pandas as pd
-import cloudpickle
 import pyomo.environ as pyo
 import scripts.utils as utils
 
@@ -30,7 +32,7 @@ dataset = utils.generate_data(N1=5, N2=10, N3=20)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Multi-Tier Time To Recover (TTR) Model
+# MAGIC ## Time To Recover (TTR) Model
 
 # COMMAND ----------
 
@@ -52,7 +54,7 @@ display(objectives)
 # COMMAND ----------
 
 highest_risk_nodes = objectives.sort_values(by="profit_loss", ascending=False)[0:5]
-highest_risk_nodes
+display(highest_risk_nodes)
 
 # COMMAND ----------
 
@@ -81,7 +83,7 @@ display(pd.DataFrame.from_records(records))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Multi-Tier Time To Survive (TTS) Model
+# MAGIC ## Time To Survive (TTS) Model
 
 # COMMAND ----------
 
@@ -95,7 +97,6 @@ for disrupted_node in disrupted_nodes:
 # COMMAND ----------
 
 tts = pd.concat(tts, ignore_index=True)
-display(tts)
 
 # COMMAND ----------
 
@@ -110,4 +111,4 @@ display(tts[tts["tts"] < tts["ttr"]])
 # MAGIC | library                                | description             | license    | source                                              |
 # MAGIC |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
 # MAGIC | pyomo | An object-oriented algebraic modeling language in Python for structured optimization problems | BSD | https://pypi.org/project/pyomo/
-# MAGIC | coinor-cbc | COIN-OR Branch-and-Cut solver | Eclipse Public License - v 2.0 | https://github.com/coin-or/Cbc
+# MAGIC | highspy | Linear optimization solver (HiGHS) | MIT | https://pypi.org/project/highspy/

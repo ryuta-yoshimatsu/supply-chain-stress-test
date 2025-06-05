@@ -11,7 +11,7 @@
 IMAGE TO REFERENCE ARCHITECTURE
 
 ## Authors
-<ryuta.yoshimatsu@databricks.com>
+<ryuta.yoshimatsu@databricks.com>, <luis.herrera@databricks.com>, <puneet.jain@databricks.com>
 
 ## Project support 
 
@@ -26,4 +26,4 @@ Any issues discovered through the use of this project should be filed as GitHub 
 | library                                | description             | license    | source                                              |
 |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
 | pyomo | An object-oriented algebraic modeling language in Python for structured optimization problems | BSD | https://pypi.org/project/pyomo/
-| coinor-cbc | COIN-OR Branch-and-Cut solver | Eclipse Public License - v 2.0 | https://github.com/coin-or/Cbc
+| highspy | Linear optimization solver (HiGHS) | MIT | https://pypi.org/project/highspy/
