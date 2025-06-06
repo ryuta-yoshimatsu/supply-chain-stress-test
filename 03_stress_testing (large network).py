@@ -15,7 +15,7 @@
 # MAGIC ## Cluster Configuration and Performance Note
 # MAGIC This notebook was tested on the following Databricks cluster configuration:
 # MAGIC - **Databricks Runtime Version:** 16.4 LTS ML (includes Apache Spark 3.5.2, Scala 2.12)
-# MAGIC - **Photon Acceleration:** Enabled (Photon boosts Apache Spark workloads; not all ML workloads will see an improvement)
+# MAGIC - **Photon Acceleration:** Disabled (Photon boosts Apache Spark workloads; not all ML workloads will see an improvement)
 # MAGIC - **Worker Type:** Standard_D4ds_v5 (16 GB Memory, 4 Cores)
 # MAGIC - **Number of Workers:** 4
 # MAGIC - **Driver Type:** Standard_DS4_v2 (28 GB Memory, 8 Cores)
@@ -50,8 +50,7 @@ from pyomo.common.timing import TicTocTimer
 import scripts.utils as utils
 
 # Generate a synthetic 3-tier network dataset for optimization 
-#dataset = utils.generate_data(N1=200, N2=500, N3=1000)
-dataset = utils.generate_data(N1=100, N2=200, N3=400)
+dataset = utils.generate_data(N1=200, N2=500, N3=1000)
 
 # Assign a random ttr (time-to-recovery) to each disrupted node
 random.seed(777)
@@ -125,7 +124,7 @@ except Exception as e:
 
 # Start the Ray cluster with the specified configuration
 ray_conf = setup_ray_cluster(
-    min_worker_nodes=min_node,
+    #min_worker_nodes=min_node,
     max_worker_nodes=max_node,
     num_cpus_head_node=num_cpus_head_node,
     num_cpus_per_node=num_cpu_cores_per_worker,
@@ -201,53 +200,39 @@ TTRSolver()(df.take(1)[0])
 
 # COMMAND ----------
 
-df_new = df.repartition(300).map(TTRSolver,
+df_ttr = df.repartition(300).map(TTRSolver,
        num_cpus=1,
-       concurrency=(3,20))
-pandas_df = df_new.to_pandas()
+       concurrency=(4,20))
+pandas_df_ttr = df_ttr.to_pandas()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Save Results to Delta Table
-# MAGIC The results are saved to a Delta table for persistent storage and further analysis using Spark SQL. This step is Databricks-specific.
-
-# COMMAND ----------
-
-# Databricks-only: save to Delta table
-try:
-    spark.createDataFrame(pandas_df).write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.stress_test_result_ttr")
-except Exception as e:
-    print(f"Warning: Could not save to Delta table: {e}")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Analyze Highest Risk Nodes
+# MAGIC ### Highest Risk Nodes
 # MAGIC The top 10 nodes with the highest profit loss are identified for further investigation.
 
 # COMMAND ----------
 
-highest_risk_nodes = pandas_df.sort_values(by="profit_loss", ascending=False)[0:10]
+highest_risk_nodes = pandas_df_ttr.sort_values(by="profit_loss", ascending=False)[0:10]
 highest_risk_nodes
 
 # COMMAND ----------
 
 np.random.seed(42)
-pandas_df["total_spend"] = np.abs(np.random.normal(loc=0, scale=50, size=len(pandas_df))).astype(int)
+pandas_df_ttr["total_spend"] = np.abs(np.random.normal(loc=0, scale=50, size=len(pandas_df_ttr))).astype(int)
 
 # COMMAND ----------
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-plt.scatter(pandas_df["profit_loss"], pandas_df["total_spend"])
-plt.xlabel("Profit/Loss")
+plt.scatter(pandas_df_ttr["profit_loss"], pandas_df_ttr["total_spend"])
+plt.xlabel("Lost Profit")
 plt.ylabel("Total Spend")
-plt.title("Scatter Plot of Total Spend vs Lost Profit")
+plt.title("Total Spend vs Lost Profit")
 
-rect_1 = patches.Rectangle((1900, -5), 1100, 105, linewidth=2, edgecolor='red', facecolor='none')
-rect_2 = patches.Rectangle((-50, 100), 1000, 75, linewidth=2, edgecolor='red', facecolor='none')
+rect_1 = patches.Rectangle((1900, -5), 3100, 110, linewidth=2, edgecolor='red', facecolor='none')
+rect_2 = patches.Rectangle((-50, 100), 1000, 100, linewidth=2, edgecolor='red', facecolor='none')
 plt.gca().add_patch(rect_1)
 plt.gca().add_patch(rect_2)
 
@@ -287,16 +272,46 @@ TTSSolver()(df.take(1)[0])
 
 # COMMAND ----------
 
-df_new = df.repartition(300).map(TTSSolver,
-                                 num_cpus=1,
-                                 concurrency=(3,20))
-pandas_df = df_new.to_pandas()
+# Reduce parallelism by setting num_cpus to 2 as TTS is more memory intensive
+df_tts = df.repartition(300).map(TTSSolver,
+                                 num_cpus=2,
+                                 concurrency=(2,10))
+pandas_df_tts = df_tts.to_pandas()
+
+# COMMAND ----------
+
+import matplotlib.pyplot as plt
+
+pandas_df_tts['delta'] = pandas_df_tts['ttr'] - pandas_df_tts['tts']
+positive_delta_df = pandas_df_tts[pandas_df_tts['delta'] > 0]
+ax = positive_delta_df.hist(column='delta', bins=10, grid=False, edgecolor='black', figsize=(10, 6))
+plt.title('Histogram of TTR - TTS')
+plt.xlabel('TTR - TTS')
+plt.ylabel('Frequency')
+plt.grid(axis='y', alpha=0.75)
+display(ax)
+
+# COMMAND ----------
+
+try:
+    shutdown_ray_cluster()
+except Exception:
+    pass
+try:
+    ray.shutdown()
+except Exception:
+    pass
 
 # COMMAND ----------
 
 # Databricks-only: save to Delta table
 try:
-    spark.createDataFrame(pandas_df).write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.stress_test_result_tts")
+    spark.createDataFrame(pandas_df_ttr).write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.stress_test_result_ttr")
+except Exception as e:
+    print(f"Warning: Could not save to Delta table: {e}")
+
+try:
+    spark.createDataFrame(pandas_df_tts).write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.stress_test_result_tts")
 except Exception as e:
     print(f"Warning: Could not save to Delta table: {e}")
 

@@ -32,7 +32,7 @@ dataset = utils.generate_data(N1=5, N2=10, N3=20)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Time To Recover (TTR) Model
+# MAGIC ## Multi-Tier Time To Recover (TTR) Model
 
 # COMMAND ----------
 
@@ -83,7 +83,7 @@ display(pd.DataFrame.from_records(records))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Time To Survive (TTS) Model
+# MAGIC ## Multi-Tier Time To Survive (TTS) Model
 
 # COMMAND ----------
 

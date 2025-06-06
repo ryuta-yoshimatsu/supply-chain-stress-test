@@ -195,12 +195,12 @@ def visualize_network(dataset: dict) -> None:
     # Tier-2 (coloured by part-type)
     ax.scatter([pos[n][0] for n in tier2], [pos[n][1] for n in tier2],
                s=550, marker='s', c=colours_for(tier2),
-               edgecolor='k', linewidth=0.5, label="Tier 2 (sub-assemblies)")
+               edgecolor='k', linewidth=0.5, label="Tier 2 (suppliers)")
 
     # Tier-3 (coloured by part-type)
     ax.scatter([pos[n][0] for n in tier3], [pos[n][1] for n in tier3],
                s=450, marker='^', c=colours_for(tier3),
-               edgecolor='k', linewidth=0.5, label="Tier 3 (suppliers)")
+               edgecolor='k', linewidth=0.5, label="Tier 3 (sub-suppliers)")
 
     # Node labels
     for node, (x, y) in pos.items():
@@ -219,7 +219,7 @@ def visualize_network(dataset: dict) -> None:
     ax.set_xlim(-3.0, max_width + 3.0)
     ax.set_ylim(-0.7, 2.7)
     ax.axis("off")
-    plt.title("Three-Tier Directed Network\n(coloured by supplier_part_type)")
+    plt.title("Multi-Tier Supply Chain Network\n(coloured by supplier_part_type)")
 
     # Custom legend: one patch per part-type code
     patches = [mpatches.Patch(color=code_colour[c], label=c) for c in codes]
