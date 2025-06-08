@@ -9,11 +9,7 @@
 # MAGIC
 # MAGIC # Stress Test Supply Chain Networks at Scale
 # MAGIC
-# MAGIC In the recent trade war, governments have weaponized commerce through cycles of retaliatory tariffs, quotas, and export bans. The shockwaves have rippled across supply chain networks and forced companies to reroute sourcing, reshore production, and stockpile critical inputs—measures that extend lead times and erode once-lean, just-in-time operations. Each detour carries a cost: rising input prices, increased logistics expenses, and excess inventory tying up working capital. As a result, profit margins shrink, cash-flow volatility increases, and balance-sheet risks intensify.
-# MAGIC
-# MAGIC Was the trade war a singular event that caught global supply chains off guard? Perhaps in its specifics—but the magnitude of disruption was hardly unprecedented. Over the span of just a few years, the COVID-19 pandemic, the 2021 Suez Canal blockage, and the ongoing Russo-Ukrainian war each delivered major shocks, occurring roughly a year apart. These events, difficult to foresee, have caused substantial disruption to global supply chains. 
-# MAGIC
-# MAGIC What can be done to prepare for such disruptive events? Instead of reacting in panic to last-minute changes, can companies make informed decisions and take proactive steps before crises unfold? A well-cited research paper by MIT professor David Simchi-Levi presents a compelling, data-driven approach to this challenge. At the core of his method is the creation of a digital twin of the supply chain—built using real operational data—to simulate a wide range of disruption scenarios. By analyzing how the network responds, companies can assess potential impacts, uncover hidden vulnerabilities, and identify redundant investments. This process, known as stress testing, has become widely adopted across industries.
+# MAGIC Recent disruptions have highlighted the inherent fragility of global supply chains, challenging the efficiency and reliability of traditional operating models. In response, companies have adopted strategies such as reshoring production and stockpiling essential materials. While these measures aim to improve continuity, they often lead to increased costs and heightened financial risk. To better anticipate and manage such risks, a well-cited [research paper](https://dspace.mit.edu/handle/1721.1/101782) proposes stress testing supply chains using digital twins—virtual models constructed from real operational data. By simulating a range of disruption scenarios, businesses can uncover vulnerabilities, evaluate potential impacts, and make informed, proactive decisions. This approach is increasingly being adopted to enhance supply chain resilience.
 
 # COMMAND ----------
 
@@ -23,12 +19,15 @@
 
 # MAGIC %md
 # MAGIC TODO: Write about the method described in the paper here.
-# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC The remainder notebooks provide a detailed implementation of the solution and perform a comprehensive analysis on Databricks.
 # MAGIC
-# MAGIC TODO: Write how the solution acclerator is structured here.
+# MAGIC TODO: Write about the sturcture of the solution acclerator here.
 # MAGIC
-# MAGIC TODO: Go thorugh the tools: pyomo and highs here.
+# MAGIC TODO: Go thorugh the tools: pyomo, highs and ray here.
 
 # COMMAND ----------
 

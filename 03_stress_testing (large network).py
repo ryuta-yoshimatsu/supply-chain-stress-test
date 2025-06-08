@@ -5,7 +5,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # Stress Test a Large Network and Analyze Results
+# MAGIC # Stress-Test Large Networks and Analyze the Results
 # MAGIC
 # MAGIC This notebook demonstrates how to perform large-scale supply chain stress testing using distributed computation with Ray on Databricks. It covers Ray cluster setup, distributed optimization, and result analysis.
 
@@ -176,7 +176,7 @@ class TTRSolver:
         # Call the utility function to build and solve the optimization model
         solver = utils.build_and_solve_multi_tier_ttr(self.data, disrupted, row['ttr'])
         row['termination_condition'] = str(solver.iloc[0]['termination_condition'])
-        row['profit_loss'] = solver.iloc[0]['profit_loss']
+        row['lost_profit'] = solver.iloc[0]['lost_profit']
         return row
 
 # COMMAND ----------
@@ -195,7 +195,7 @@ TTRSolver()(df.take(1)[0])
 # MAGIC ### Distributed Computation with Ray Data API
 # MAGIC The following cell demonstrates distributed computation using Ray's Data API:
 # MAGIC - The Ray Dataset is repartitioned into 300 partitions to increase parallelism and optimize resource utilization across the cluster.
-# MAGIC - The `map` function applies the `Solver` class to each partition in parallel, with each task using 1 CPU and a concurrency window of (3, 20) you can adjust the concurreny based on your cluster setup.
+# MAGIC - The `map` function applies the `Solver` class to each partition in parallel, with each task using 1 CPU and a concurrency window of (4, 20) you can adjust the concurreny based on your cluster setup.
 # MAGIC - The results are collected as a pandas DataFrame for further analysis.
 
 # COMMAND ----------
@@ -213,7 +213,7 @@ pandas_df_ttr = df_ttr.to_pandas()
 
 # COMMAND ----------
 
-highest_risk_nodes = pandas_df_ttr.sort_values(by="profit_loss", ascending=False)[0:10]
+highest_risk_nodes = pandas_df_ttr.sort_values(by="lost_profit", ascending=False)[0:10]
 highest_risk_nodes
 
 # COMMAND ----------
@@ -226,7 +226,7 @@ pandas_df_ttr["total_spend"] = np.abs(np.random.normal(loc=0, scale=50, size=len
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-plt.scatter(pandas_df_ttr["profit_loss"], pandas_df_ttr["total_spend"])
+plt.scatter(pandas_df_ttr["lost_profit"], pandas_df_ttr["total_spend"])
 plt.xlabel("Lost Profit")
 plt.ylabel("Total Spend")
 plt.title("Total Spend vs Lost Profit")
@@ -293,6 +293,11 @@ display(ax)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Shutdown Ray Cluster
+
+# COMMAND ----------
+
 try:
     shutdown_ray_cluster()
 except Exception:
@@ -301,6 +306,11 @@ try:
     ray.shutdown()
 except Exception:
     pass
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Write to Delta Tables
 
 # COMMAND ----------
 

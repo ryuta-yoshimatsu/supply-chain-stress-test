@@ -64,29 +64,29 @@ def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
         edges.append((t3_node, tgt))
         incoming_t2[tgt] += 1
 
-    # Generate part types and supplier part types
+    # Generate material types and supplier material types
     n = math.ceil(len(tier2) / 3) + math.ceil(len(tier3) / 2)
-    part_types = list(map(''.join, product(string.ascii_lowercase, repeat=3)))[:n]
+    material_types = list(map(''.join, product(string.ascii_lowercase, repeat=3)))[:n]
 
-    supplier_part_type = {}
+    supplier_material_type = {}
 
-    # 3 adjacent tier2 nodes produce the same part type
+    # 3 adjacent tier2 nodes produce the same material type
     for idx, node in enumerate(tier2):
-        supplier_part_type[node] = part_types[math.floor(idx / 3)]
+        supplier_material_type[node] = material_types[math.floor(idx / 3)]
 
-    # 2 adjacent tier3 nodes produce the same part type
+    # 2 adjacent tier3 nodes produce the same material type
     for idx, node in enumerate(tier3):
-        supplier_part_type[node] = part_types[math.ceil(len(tier2) / 3) + math.floor(idx / 2)]
+        supplier_material_type[node] = material_types[math.ceil(len(tier2) / 3) + math.floor(idx / 2)]
 
     # Nested sets N_minus, N_plus, P
     N_plus = defaultdict(set)  # i → list_of_children j
-    N_minus = defaultdict(set)  # j → list_of_part_types k
+    N_minus = defaultdict(set)  # j → list_of_material_types k
     P = defaultdict(list)  # (j,k) → list_of_parents i
 
     for i, j in edges:
         if j in tier1 + tier2:
-            N_minus[j].add(supplier_part_type[i])
-    N_minus = {node: sorted(list(parts)) for node, parts in N_minus.items()}
+            N_minus[j].add(supplier_material_type[i])
+    N_minus = {node: sorted(list(materials)) for node, materials in N_minus.items()}
 
     for i, j in edges:
         if i in tier2 + tier3:
@@ -95,7 +95,7 @@ def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
 
     for i, j in edges:
         if j in tier1 + tier2:
-            P[(j, supplier_part_type[i])].append(i)
+            P[(j, supplier_material_type[i])].append(i)
 
     # Scalar & tabular parameters
     rng_int = lambda lo, hi: random.randint(lo, hi)
@@ -107,17 +107,18 @@ def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
     c = {n: rng_int(1500, 3000) for n in tier1 + tier2 + tier3}  # Production capacity per TTR for every node
 
     r = {}
-    for k in part_types:
+    for k in material_types:
         for j in tier1 + tier2:
-            r[(k, j)] = 1 if k in N_minus[j] else 0
+            if k in N_minus[j]:
+                r[(k, j)] = 1
 
     dataset = {
         "tier1": tier1,
         "tier2": tier2,
         "tier3": tier3,
         "edges": edges,
-        "supplier_part_type": supplier_part_type,
-        "part_types": part_types,
+        "supplier_material_type": supplier_material_type,
+        "material_types": material_types,
         "f": f,
         "s": s,
         "d": d,
@@ -126,8 +127,8 @@ def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
         "N_minus": N_minus,
         "N_plus": N_plus,
         "P": P,
-        "part_types": part_types,
-        "supplier_part_type": supplier_part_type,
+        "material_types": material_types,
+        "supplier_material_type": supplier_material_type,
     }
     return dataset
 
@@ -144,10 +145,10 @@ def visualize_network(dataset: dict) -> None:
     tier2 = dataset["tier2"]
     tier3 = dataset["tier3"]
     edges = dataset["edges"]
-    supplier_part_type = dataset["supplier_part_type"]
+    supplier_material_type = dataset["supplier_material_type"]
 
     # One distinct colour per code in the dict
-    codes = sorted(set(supplier_part_type.values()))
+    codes = sorted(set(supplier_material_type.values()))
     cmap = plt.get_cmap("tab20", len(codes))
     code_colour = {code: cmap(i) for i, code in enumerate(codes)}
 
@@ -157,7 +158,7 @@ def visualize_network(dataset: dict) -> None:
     # Helper that returns a list of colours in node order
     def colours_for(nodes):
         return [
-            code_colour.get(supplier_part_type.get(n, None), default_colour)
+            code_colour.get(supplier_material_type.get(n, None), default_colour)
             for n in nodes
         ]
 
@@ -190,14 +191,14 @@ def visualize_network(dataset: dict) -> None:
     # Tier-1 (neutral grey)
     ax.scatter([pos[n][0] for n in tier1], [pos[n][1] for n in tier1],
                s=550, marker='o', c=colours_for(tier1),
-               edgecolor='k', linewidth=0.5, label="Tier 1 (products)")
+               edgecolor='k', linewidth=0.5, label="Products")
 
-    # Tier-2 (coloured by part-type)
+    # Tier-2 (coloured by material-type)
     ax.scatter([pos[n][0] for n in tier2], [pos[n][1] for n in tier2],
                s=550, marker='s', c=colours_for(tier2),
                edgecolor='k', linewidth=0.5, label="Tier 2 (suppliers)")
 
-    # Tier-3 (coloured by part-type)
+    # Tier-3 (coloured by material-type)
     ax.scatter([pos[n][0] for n in tier3], [pos[n][1] for n in tier3],
                s=450, marker='^', c=colours_for(tier3),
                edgecolor='k', linewidth=0.5, label="Tier 3 (sub-suppliers)")
@@ -219,11 +220,11 @@ def visualize_network(dataset: dict) -> None:
     ax.set_xlim(-3.0, max_width + 3.0)
     ax.set_ylim(-0.7, 2.7)
     ax.axis("off")
-    plt.title("Multi-Tier Supply Chain Network\n(coloured by supplier_part_type)")
+    plt.title("Multi-Tier Supply Chain Network\n(colored by supplier_material_type)")
 
-    # Custom legend: one patch per part-type code
+    # Custom legend: one patch per material-type code
     patches = [mpatches.Patch(color=code_colour[c], label=c) for c in codes]
-    first_legend = ax.legend(handles=patches, title="supplier_part_type", fontsize=8,
+    first_legend = ax.legend(handles=patches, title="supplier_material_type", fontsize=8,
                              title_fontsize=9, loc="upper left", bbox_to_anchor=(1.02, 1))
     # Add the tier legend underneath
     ax.legend(loc="upper left")
@@ -250,17 +251,17 @@ def build_and_solve_multi_tier_ttr(dataset: dict, disrupted: list[str], ttr: flo
         'V': dataset['tier1'],  # product nodes
         'D': dataset['tier1'] + dataset['tier2'],  # all BUT leaf nodes
         'U': dataset['tier2'] + dataset['tier3'],  # all BUT product nodes
-        'K': dataset['part_types'],  # part types  (k ∈ 𝒩⁻(j))
+        'K': dataset['material_types'],  # material types  (k ∈ 𝒩⁻(j))
         'S': disrupted,  # disrupted nodes in scenario n
-        'N_minus': dataset['N_minus'],  # parts required to produce node j: dict  j ↦ list_of_k   (𝒩⁻(j))
+        'N_minus': dataset['N_minus'],  # materials required to produce node j: dict  j ↦ list_of_k   (𝒩⁻(j))
         'N_plus': dataset['N_plus'],    # child nodes of node i: dict  i ↦ list_of_j   (𝒩⁺(i))
-        'P': dataset['P'],  # parent nodes of node j of part type k: dict  (j,k) ↦ list_of_i  (𝒫_{jk})
+        'P': dataset['P'],  # parent nodes of node j of material type k: dict  (j,k) ↦ list_of_i  (𝒫_{jk})
         'f': dataset['f'],  # profit margin of 1 unit of j
         's': dataset['s'],  # inventory of i
         't': ttr,           # TTR for disruption scenario n (a scalar)
         'd': dataset['d'],  # demand for j per time unit
         'c': dataset['c'],  # plant capacity per time unit
-        'r': dataset['r'],  # number of part type k needed for one unit of j 
+        'r': dataset['r'],  # number of material type k needed for one unit of j 
     }
 
     # Build the ConcreteModel
@@ -351,7 +352,7 @@ def build_and_solve_multi_tier_ttr(dataset: dict, disrupted: list[str], ttr: flo
             "disrupted", 
             "ttr", 
             "termination_condition", 
-            "profit_loss", 
+            "lost_profit", 
             "model",
             ],
         )
@@ -367,7 +368,7 @@ def build_and_solve_multi_tier_ttr(dataset: dict, disrupted: list[str], ttr: flo
                 "disrupted", 
                 "ttr", 
                 "termination_condition", 
-                "profit_loss", 
+                "lost_profit", 
                 ],
             )
         
@@ -388,15 +389,15 @@ def build_and_solve_multi_tier_tts(dataset: dict, disrupted: list[str], return_m
         'V': dataset['tier1'],  # product nodes
         'D': dataset['tier1'] + dataset['tier2'],  # all BUT leaf nodes
         'U': dataset['tier2'] + dataset['tier3'],  # all BUT product nodes
-        'K': dataset['part_types'],  # part types  (k ∈ 𝒩⁻(j))
+        'K': dataset['material_types'],  # material types  (k ∈ 𝒩⁻(j))
         'S': disrupted,  # disrupted nodes in scenario n
-        'N_minus': dataset['N_minus'],  # parts required to produce node j: dict  j ↦ list_of_k   (𝒩⁻(j))
+        'N_minus': dataset['N_minus'],  # materials required to produce node j: dict  j ↦ list_of_k   (𝒩⁻(j))
         'N_plus': dataset['N_plus'],  # child nodes of node i: dict  i ↦ list_of_j   (𝒩⁺(i))
-        'P': dataset['P'],  # parent nodes of node j of part type k: dict  (j,k) ↦ list_of_i  (𝒫_{jk})
+        'P': dataset['P'],  # parent nodes of node j of material type k: dict  (j,k) ↦ list_of_i  (𝒫_{jk})
         's': dataset['s'],  # inventory of i
         'd': dataset['d'],  # demand for j per time unit
         'c': dataset['c'],  # plant capacity per time unit
-        'r': dataset['r'],  # number of part type k needed for one unit of j 
+        'r': dataset['r'],  # number of material type k needed for one unit of j 
     }
 
     # Build the ConcreteModel
