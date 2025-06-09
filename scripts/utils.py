@@ -19,7 +19,7 @@ def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
     Returns:
     dict: A dictionary containing the generated dataset.
     """
-    random.seed(777)  # Keep topology reproducible
+    random.seed(777)  # DO NOT CHANGE! Keep topology reproducible
 
     # Ensure N3 is twice N2
     assert N3 == 2 * N2
@@ -103,8 +103,8 @@ def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
 
     f = {j: rng_float(0.05, 0.30) for j in tier1}  # Profit margin for finished products
     s = {n: rng_int(1500, 3000) for n in tier1 + tier2 + tier3}  # On-hand inventory for every node
-    d = {j: rng_int(500, 1000) for j in tier1}  # Demand per TTR for finished products
-    c = {n: rng_int(1500, 3000) for n in tier1 + tier2 + tier3}  # Production capacity per TTR for every node
+    d = {j: rng_int(500, 1000) for j in tier1}  # Demand per time unit for finished products
+    c = {n: rng_int(1500, 3000) for n in tier1 + tier2 + tier3}  # Production capacity per time unit for every node
 
     r = {}
     for k in material_types:
@@ -117,8 +117,8 @@ def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
         "tier2": tier2,
         "tier3": tier3,
         "edges": edges,
-        "supplier_material_type": supplier_material_type,
         "material_types": material_types,
+        "supplier_material_type": supplier_material_type,
         "f": f,
         "s": s,
         "d": d,
@@ -127,8 +127,6 @@ def generate_data(N1: int=5, N2: int=10, N3: int=20) -> dict:
         "N_minus": N_minus,
         "N_plus": N_plus,
         "P": P,
-        "material_types": material_types,
-        "supplier_material_type": supplier_material_type,
     }
     return dataset
 
@@ -336,7 +334,7 @@ def build_and_solve_multi_tier_ttr(dataset: dict, disrupted: list[str], ttr: flo
     m.Capacity = pyo.Constraint(m.NODES, rule=capacity_rule)
 
     # Solve
-    solver = pyo.SolverFactory("highs")  # choose any LP/MIP solver that Pyomo can see (CBC, Gurobi, CPLEX, HiGHS, …)
+    solver = pyo.SolverFactory("highs")  # choose any LP/MIP solver that Pyomo can see (HiGHS, CBC, Gurobi, CPLEX, …)
     result = solver.solve(m, tee=False)
 
     if return_model:
@@ -470,7 +468,7 @@ def build_and_solve_multi_tier_tts(dataset: dict, disrupted: list[str], return_m
     m.Capacity = pyo.Constraint(m.NODES, rule=capacity_rule)
 
     # Solve
-    solver = pyo.SolverFactory("highs")  # choose any LP/MIP solver that Pyomo can see (CBC, Gurobi, CPLEX, HiGHS, …)
+    solver = pyo.SolverFactory("highs")  # choose any LP/MIP solver that Pyomo can see (HiGHS, CBC, Gurobi, CPLEX, …)
     result = solver.solve(m, tee=False)
 
     if return_model:
