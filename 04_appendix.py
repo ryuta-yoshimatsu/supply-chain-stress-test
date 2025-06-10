@@ -7,7 +7,8 @@
 # MAGIC %md
 # MAGIC # Appendix
 # MAGIC
-# MAGIC In this notebook, we will explore the mathematical formulation of the optimization problem, define the variables, discuss key assumptions, and outline potential extensions to the model. This solution accelerator closely follows the models presented in the [paper](https://dspace.mit.edu/handle/1721.1/101782) (although slightly modified), and we recommend referring to this source for more details.
+# MAGIC In this notebook, we explore the mathematical formulation of the optimization problem, define the variables and discuss key assumptions. This solution accelerator is based closely on the models presented in the [paper](https://dspace.mit.edu/handle/1721.1/101782) (with slight modifications), and we recommend referring to it for further details.
+# MAGIC
 
 # COMMAND ----------
 
@@ -30,7 +31,7 @@
 # MAGIC %md
 # MAGIC ## Multi-Tier TTS Model
 # MAGIC
-# MAGIC The multi-tier time-to-survive (TTS) model asks: given a disruption at a specific node, how long can the network continue meeting demand with **no** lost sales? It employs the same directed-graph representation as the TTR model, but its linear program maximises the survival horizon, $t$, rather than minimising lost profit.
+# MAGIC The multi-tier time-to-survive (TTS) model asks: given a disruption at a specific node, how long can the network continue meeting demand with **no** lost sales? It employs the same directed-graph representation as the TTR model, but its linear program maximises the survival horizon, t, rather than minimising lost profit.
 # MAGIC
 # MAGIC **Constraints**: Identical to the TTR model except for the fourth, where no loss is allowed; demand must be fully satisfied.
 
@@ -43,12 +44,9 @@
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Assumptions
 # MAGIC
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC
+# MAGIC In both the TTR and TTS models, we simplify by assuming that processing lead times are negligible compared to the disruption's impact. We further assume that the costs associated with rerouting materials and manufacturing changeovers are also negligible relative to the disruption's effect. These assumptions are often reasonable in the context of high-impact disruptions, where their effects far outweigh those of these secondary factors. See the [paper](https://dspace.mit.edu/handle/1721.1/101782) for more details.
 
 # COMMAND ----------
 

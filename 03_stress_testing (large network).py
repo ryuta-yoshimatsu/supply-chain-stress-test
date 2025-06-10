@@ -374,7 +374,7 @@ except Exception as e:
 # MAGIC
 # MAGIC In this notebook, we explored how to perform stress testing on a large supply chain network. We leveraged Ray on Databricks to distribute the simulation of thousands of disruption scenarios. We then analyzed the distribution of risk exposures across these scenarios and identified nodes that may require additional investment, as well as those that may have been previously over-invested.
 # MAGIC
-# MAGIC This concludes the main part of the solution accelerator. The next notebook, `04_appendix`, is optional. It dives into the mathematical formulation of the optimization problem, discusses key assumptions, and outlines ways to further extend the model.
+# MAGIC This concludes the main part of the solution accelerator. The next notebook, `04_appendix`, is optional. It dives into the mathematical formulation of the optimization problem and discusses key assumptions.
 # MAGIC
 
 # COMMAND ----------
