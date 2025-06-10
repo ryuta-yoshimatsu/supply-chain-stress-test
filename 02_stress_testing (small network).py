@@ -7,7 +7,7 @@
 # MAGIC %md
 # MAGIC # Stress-Test Small Networks and Analyze the Results
 # MAGIC
-# MAGIC This notebook demonstrates how to run stress tests on a small supply chain network and analyze the results. We will introduce two key concepts—time-to-recover (TTR) and time-to-survive (TTS)—which are essential for understanding the risk exposure within the network.
+# MAGIC This notebook demonstrates how to run stress tests on a small supply chain network and analyze the results. We will introduce two key concepts—time-to-recover (TTR) and time-to-survive (TTS)—which are essential for understanding the risk exposure of disruption scenarios.
 
 # COMMAND ----------
 
@@ -87,13 +87,13 @@ display(lost_profit)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The result above indicates that not every failure leads to a finite lost profit. The magnitude of lost profit is influenced by several factors, including inventory levels, maximum production capacity, supplier diversification, TTR, and more.
+# MAGIC The result above indicates that not every failure leads to a finite lost profit. The magnitude of lost profit is influenced by several factors, including inventory levels, production capacity, supplier diversification, TTR, and more.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Highest Risk Nodes
-# MAGIC Let's examine the top 5 nodes with the highest lost profit, identified for further investigation. We'll visualize the network again to help interpret the results more intuitively.
+# MAGIC Let's examine the top 5 nodes with the highest lost profit. We'll visualize the network again to help interpret the results more intuitively.
 
 # COMMAND ----------
 
@@ -110,7 +110,7 @@ display(highest_risk_nodes)
 # MAGIC
 # MAGIC `T2_8` is a more subtle case. At first glance, its high risk is not obvious. However, upon examining the nodes it supplies—`T1_1`, `T1_3`, and `T1_5`—we see that for `T1_1` and `T1_3`, `T2_8` is the only source of a specific material. This means its failure directly halts production at those nodes.
 # MAGIC
-# MAGIC For the same reason, `T3_15` is also a high-risk node, with disruption effects that propagate across multiple tiers.
+# MAGIC For the same reason, `T3_15` is also a high-risk node, with disruption effects that propagate across multiple tiers. `T3_14` is in a similar situation; however, its TTR is 5—significantly shorter than `T3_15`'s TTR of 10. As a result, `T3_14` does not appear on the riskiest node list.
 # MAGIC
 # MAGIC Let's take a closer look at a specific failure scenario by inspecting the values of the decision variables identified by the linear solver. In the `utils.build_and_solve_multi_tier_ttr` function, you can set the parameter `return_model=True` to retrieve the model and access the decision variable values. Let's look into the `T2_8` failure.
 # MAGIC
@@ -157,14 +157,14 @@ display(merged)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The first thing to notice in the output above is that the production volume of `T2_8` is zero due to the simulated failure (`production`). Next, we observe losses at `T1_1` and `T1_3` (`lost_demand`). In the case of `T1_3`, there is no production, so once the existing stock is depleted, the remaining demand becomes lost demand. For `T1_1`, it appears that `T2_8`'s inventory (1,569 units) was routed to this node, allowing some production to continue. The solver prioritized `T1_1` because it has a higher profit margin than `T1_3` (as shown in the `01_operational_data` notebook).
+# MAGIC The first thing to notice in the output above is that the production volume of `T2_8` is zero due to the simulated failure (`production`). Next, we observe losses at `T1_1` and `T1_3` (`lost_demand`). In the case of `T1_3`, there is no production, so once the existing stock is depleted, the remaining demand directly becomes lost demand. For `T1_1`, it appears that all of `T2_8`'s inventory (1,569 units) was routed to this node, allowing some production to continue. The solver prioritized `T1_1` because it has a higher profit margin than `T1_3` (as shown in the `01_operational_data` notebook).
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Multi-Tier Time-to-Survive (TTS) Model
 # MAGIC
-# MAGIC Time-to-Survive (TTS) provides a complementary perspective on the risk associated with node failures. Unlike TTR, TTS is not an input but an output—a decision variable. When a disruption affects a node or group of nodes, TTS represents the amount of time the reconfigured network can continue to meet customer demand without incurring any loss. The risk becomes more critical when TTR exceeds TTS by a significant margin.
+# MAGIC Time-to-Survive (TTS) provides a complementary perspective on the risk associated with node failures. Unlike TTR, TTS is not an input but an output—a decision variable. When a disruption affects a node or group of nodes, TTS represents the amount of time the reconfigured network can continue to meet demand without incurring any loss. The risk becomes more critical when TTR exceeds TTS by a significant margin.
 # MAGIC
 # MAGIC The TTS model closely resembles the TTR model, with minor modifications to the objective function and constraints. For more details, see the function `utils.build_and_solve_multi_tier_tts` in the script `scripts/utils.py` or refer to the `04_appendix` notebook.
 # MAGIC

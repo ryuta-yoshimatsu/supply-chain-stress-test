@@ -39,7 +39,7 @@ import scripts.utils as utils
 # MAGIC
 # MAGIC In the real world, the supply chain network already exists, so the primary task is to collect data and map the network. However, in this solution accelerator, we generate a synthetic dataset for the entire supply chain. This allows us to control the setup and better understand the methodology in depth.
 # MAGIC
-# MAGIC Let’s generate a three-tier supply chain network consisting of raw-material suppliers (Tier 3), direct suppliers (Tier 2), and finished-goods plants (Tier 1). The utility function `generate_data` outputs the network topology (directed edges) and key operational parameters, including inventory, capacity, demand, and profit margins. This data structure is designed to support optimization and stress-testing models that simulate how disruptions propagate through multi-tier supply chains.
+# MAGIC Let’s generate a three-tier supply chain network consisting of sub-suppliers (Tier 3), direct suppliers (Tier 2), and finished-goods plants (Tier 1). The utility function `utils.generate_data` outputs the network topology (directed edges) and key operational parameters, including inventory, capacity, demand, and profit margins.
 
 # COMMAND ----------
 
@@ -65,18 +65,18 @@ utils.visualize_network(dataset)
 # MAGIC - Product (finished-goods plants: ●) at the top
 # MAGIC - Tier 2 (direct suppliers: ■) in the middle
 # MAGIC - Tier 3 (sub-suppliers: ▲) at the bottom
-# MAGIC - Nodes with the same color produce and supply the same `supplier_material_type`.
+# MAGIC - Nodes with the same color produce and supply the same `material_type`.
 # MAGIC - Grey is used for Product nodes that have no material-type code.
-# MAGIC - Edges run from a parent node to a child node, illustrating material flow (Tier 3 ➜ Tier 2 ➜ Product).
+# MAGIC - Edges run from bottom to top, illustrating the flow of materials (Tier 3 ➜ Tier 2 ➜ Product).
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Operational Data
 # MAGIC
-# MAGIC The operational data required to run stress tests on your supply chain network depends on how the optimization problem is formulated—that is, the objective function and its constraints. In this solution accelerator, we follow the formulation presented in the [paper](https://dspace.mit.edu/handle/1721.1/101782). The table below outlines the data elements used in this approach.
+# MAGIC The operational data required to run stress tests on your supply chain network depends largely on how the optimization problem is formulated—that is, the objective function and its constraints. In this solution accelerator, we follow the formulation presented in this [paper](https://dspace.mit.edu/handle/1721.1/101782). The table below outlines the data elements used in this approach.
 # MAGIC
-# MAGIC For more details on the problem formulation and guidance on how to extend the model further, refer to the paper or the appendix notebook: `04_appendix`.
+# MAGIC For more details on the problem formulation, variable definitions, and key assumptions, refer to the paper or the notebook `04_appendix`.
 
 # COMMAND ----------
 
@@ -111,7 +111,7 @@ for key in dataset.keys():
 # MAGIC %md
 # MAGIC ## Wrap Up
 # MAGIC
-# MAGIC In this notebook, we generated a synthetic three-tier supply chain network along with the corresponding operational data. We also reviewed the structure of the network and the key requirements for the operational data.
+# MAGIC In this notebook, we generated a synthetic three-tier supply chain network along with the corresponding operational data. We also reviewed the structure of the network and the key requirements for the data.
 # MAGIC
 # MAGIC In the next notebook, `02_stress_testing (small network)`, we will run multiple stress tests on the small network constructed here.
 

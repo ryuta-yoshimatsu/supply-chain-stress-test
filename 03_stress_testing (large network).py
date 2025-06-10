@@ -7,7 +7,7 @@
 # MAGIC %md
 # MAGIC # Stress-Test Large Networks and Analyze the Results
 # MAGIC
-# MAGIC This notebook demonstrates how to perform stress testing on a large supply chain network. While the previous notebooks focused on a small network (35 nodes), modern supply chains often consist of tens of thousands of suppliers and sub-suppliers. To run comprehensive stress tests on such large-scale networks, we leverage distributed computation using Ray on Databricks. This notebook covers network generation (1,700 nodes), Ray cluster setup, distributed optimization, and result analysis.
+# MAGIC This notebook demonstrates how to perform stress testing on a large supply chain network. While the previous notebooks focused on a small network (35 nodes), modern supply chains often consist of tens of thousands of suppliers and sub-suppliers. To run comprehensive stress tests on such large-scale networks, a scalable setup is essential. We leverage distributed computation using Ray on Databricks to achieve this. This notebook covers network generation (1,700 nodes), Ray cluster setup, distributed optimization, and result analysis.
 # MAGIC
 
 # COMMAND ----------
@@ -18,7 +18,7 @@
 # MAGIC - **Databricks Runtime Version:** 16.4 LTS ML (includes Apache Spark 3.5.2, Scala 2.12)
 # MAGIC - **Photon Acceleration:** Disabled (Photon boosts Apache Spark workloads; not all ML workloads will see an improvement)
 # MAGIC - **Driver Type:** Standard_DS4_v2 (28 GB Memory, 8 Cores)
-# MAGIC - **Worker Type:** Standard_D4ds_v5 (16 GB Memory, 4 Cores)
+# MAGIC - **Worker Type:** Standard_E4d_v4 (32 GB Memory, 4 Cores, **memory optimized**)
 # MAGIC - **Number of Workers:** 4
 # MAGIC > **Note:** Performance may vary depending on the cluster size, node types, and workload characteristics. For large-scale distributed computation, ensure sufficient resources are allocated to avoid bottlenecks.
 
@@ -42,7 +42,7 @@ import scripts.utils as utils
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC We will write the results of our optimization exercise to Delta tables. Update the `catalog` and `schema` names below to specify where you want the results to be saved.
+# MAGIC We will write the results of our optimization to Delta tables. Update the `catalog` and `schema` names below to specify where you want the results to be saved.
 
 # COMMAND ----------
 
@@ -62,7 +62,7 @@ _ = spark.sql(f"CREATE SCHEMA IF NOT EXISTS {catalog}.{schema}")
 # COMMAND ----------
 
 # Generate a synthetic 3-tier network dataset for optimization 
-dataset = utils.generate_data(N1=200, N2=500, N3=1000)
+dataset = utils.generate_data(N1=200, N2=500, N3=1000) # DO NOT CHANGE!
 
 # Assign a random ttr (time-to-recovery) to each disrupted node
 random.seed(777) # DO NOT CHANGE!
@@ -134,7 +134,7 @@ except Exception as e:
 
 # Start the Ray cluster with the specified configuration
 ray_conf = setup_ray_cluster(
-    #min_worker_nodes=min_node,
+    min_worker_nodes=min_node,
     max_worker_nodes=max_node,
     num_cpus_head_node=num_cpus_head_node,
     num_cpus_per_node=num_cpu_cores_per_worker,
@@ -160,7 +160,7 @@ df = ray.data.from_pandas(df)
 # MAGIC ## Multi-Tier TTR Model
 # MAGIC
 # MAGIC ### Define the Solver Class
-# MAGIC The `TTRSolver` class encapsulates the logic for running the `utils.build_and_solve_multi_tier_ttr` function for each disrupted scenario. It is designed to be used with [Ray's distributed map operation](https://docs.ray.io/en/latest/data/api/doc/ray.data.Dataset.map.html).
+# MAGIC The `TTRSolver` class encapsulates the logic for running the `utils.build_and_solve_multi_tier_ttr` function for each disrupted scenario. It is designed to be used with Ray's [distributed map](https://docs.ray.io/en/latest/data/api/doc/ray.data.Dataset.map.html) operation.
 
 # COMMAND ----------
 
@@ -199,6 +199,8 @@ TTRSolver()(df.take(1)[0])
 # MAGIC - The Ray Dataset is repartitioned into 300 partitions to increase parallelism and optimize resource utilization across the cluster.
 # MAGIC - The `map` function applies the `TTRSolver` class to each partition in parallel, with each task using 1 CPU and a concurrency window of (4, 20) you can adjust the concurreny based on your cluster setup.
 # MAGIC - The results are collected as a pandas DataFrame for further analysis.
+# MAGIC
+# MAGIC **The following cell will run in about a minute. On a single-node cluster without distributed computation, the same calculation would take approximately an hour to complete.**
 
 # COMMAND ----------
 
@@ -223,7 +225,7 @@ display(highest_risk_nodes)
 # MAGIC %md
 # MAGIC ### Total Spend vs. Lost Profit
 # MAGIC
-# MAGIC Let's imagine we have a global budget for risk mitigation in our supply chain, and each node receives a fixed portion of that budget. The purpose of this analysis is to identify which nodes are over- or under-invested based on the risk exposure we previously computed. For simplicity, we randomly assign the total spend on risk mitigation measures for each node.
+# MAGIC Let's imagine we have a global budget for risk mitigation in our supply chain, and each node receives some portion of that budget. The purpose of this analysis is to identify which nodes are over- or under-invested based on the risk exposure we previously computed. For simplicity, we randomly assign the total spend on risk mitigation measures for each node.
 # MAGIC
 
 # COMMAND ----------
@@ -251,7 +253,7 @@ plt.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC The scatter plot above displays total spend on supplier sites for risk mitigation on the vertical axis and lost profit on the horizontal axis. This visualization allows us to quickly identify areas where risk mitigation investment is undersized relative to the potential damage of a node failure (right box), as well as areas where investment is oversized compared to the risk (left box). Both regions present opportunities to revisit and optimize our investment strategy—either to enhance network resiliency or to reduce unnecessary costs.
+# MAGIC The scatter plot above shows total spend on supplier sites for risk mitigation on the vertical axis and lost profit on the horizontal axis. This visualization helps quickly identify areas where risk mitigation investment is undersized relative to the potential impact of a node failure (right box), as well as areas where investment may be oversized relative to the risk (left box and potentially all nodes with zero lost profit). Both regions highlight opportunities to reassess and optimize the investment strategy—either to strengthen network resiliency or reduce unnecessary costs.
 
 # COMMAND ----------
 
@@ -294,7 +296,9 @@ TTSSolver()(df.take(1)[0])
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Let's solve the TTS model at scale.
+# MAGIC ### Run the Solver at Scale
+# MAGIC
+# MAGIC Let's solve the TTS model at scale. The following cell will run for approximately 30 minutes using the cluster configuration mentioned above.
 
 # COMMAND ----------
 
@@ -302,6 +306,11 @@ df_tts = df.repartition(300).map(TTSSolver,
                                  num_cpus=1,
                                  concurrency=(4,20))
 pandas_df_tts = df_tts.to_pandas()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Analyze Results
 
 # COMMAND ----------
 
@@ -320,9 +329,9 @@ display(ax)
 # MAGIC %md
 # MAGIC Note that TTS represents the maximum amount of time the network can operate without performance loss when a specific node is disrupted. It becomes particularly important when a node’s TTR exceeds its TTS.
 # MAGIC
-# MAGIC Refer to the histogram above, which shows the distribution of differences between TTR and TTS for each node. Nodes with a negative TTR − TTS difference are generally not a concern—assuming the provided TTR values are accurate. However, nodes with a positive TTR − TTS difference may incur financial loss, especially those with a large gap.
+# MAGIC Refer to the histogram above, which shows the distribution of differences between TTR and TTS for each node. Nodes with a negative TTR − TTS are generally not a concern—assuming the provided TTR values are accurate. However, nodes with a positive TTR − TTS may incur financial loss, especially those with a large gap.
 # MAGIC
-# MAGIC To enhance network resiliency, companies can engage in discussions with their suppliers to reduce TTR or explore alternative sourcing and diversification strategies.
+# MAGIC To enhance network resiliency, companies can engage in discussions with their suppliers to reduce TTR, increase TTS or explore alternative sourcing and diversification strategies.
 
 # COMMAND ----------
 
@@ -362,6 +371,11 @@ except Exception as e:
 
 # MAGIC %md
 # MAGIC ## Wrap Up
+# MAGIC
+# MAGIC In this notebook, we explored how to perform stress testing on a large supply chain network. We leveraged Ray on Databricks to distribute the simulation of thousands of disruption scenarios. We then analyzed the distribution of risk exposures across these scenarios and identified nodes that may require additional investment, as well as those that may have been previously over-invested.
+# MAGIC
+# MAGIC This concludes the main part of the solution accelerator. The next notebook, `04_appendix`, is optional. It dives into the mathematical formulation of the optimization problem, discusses key assumptions, and outlines ways to further extend the model.
+# MAGIC
 
 # COMMAND ----------
 
