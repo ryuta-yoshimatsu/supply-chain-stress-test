@@ -7,19 +7,43 @@
 # MAGIC %md
 # MAGIC # Appendix
 # MAGIC
-# MAGIC In this notebook...
+# MAGIC In this notebook, we will explore the mathematical formulation of the optimization problem, define the variables, discuss key assumptions, and outline potential extensions to the model. This solution accelerator closely follows the models presented in the [paper](https://dspace.mit.edu/handle/1721.1/101782) (although slightly modified), and we recommend referring to this source for more details.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Multi-Tier TTR Model
 # MAGIC
+# MAGIC The multi-tier time-to-recover (TTR) model represents a supply chain as a directed graph of materials and production sites. For a disruption lasting t(n), it chooses production quantities (u), inter-tier flows (y) and lost sales (l) that minimise total weighted loss across all finished products. 
+# MAGIC
+# MAGIC **Constraints**: (1) A bill-of-materials constraint limits each node’s output to the scarcest upstream material; (2) a flow-balance constraint caps shipments by on-hand inventory plus new production. (3) Disrupted nodes produce nothing. (4) Further constraints match cumulative demand, capturing unmet demand as loss, (5) and bound plant throughput by installed capacity. 
+# MAGIC
+# MAGIC The resulting linear program remains tractable for thousands of nodes.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src="images/multi-tier-ttr.png" alt="Multi-Tier TTR" width="600">
+# MAGIC <img src="images/multi-tier-ttr.png" alt="Multi-Tier TTR" width="650">
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Multi-Tier TTS Model
+# MAGIC
+# MAGIC The multi-tier time-to-survive (TTS) model asks: given a disruption at a specific node, how long can the network continue meeting demand with **no** lost sales? It employs the same directed-graph representation as the TTR model, but its linear program maximises the survival horizon, $t$, rather than minimising lost profit.
+# MAGIC
+# MAGIC **Constraints**: Identical to the TTR model except for the fourth, where no loss is allowed; demand must be fully satisfied.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC %md
-# MAGIC <img src="images/multi-tier-tts.png" alt="Multi-Tier TTS" width="600">
+# MAGIC <img src="images/multi-tier-tts.png" alt="Multi-Tier TTS" width="650">
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
 
 # COMMAND ----------
 
