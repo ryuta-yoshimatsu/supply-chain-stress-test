@@ -328,7 +328,7 @@ def build_and_solve_multi_tier_ttr(dataset: dict, disrupted: list[str], ttr: flo
         return mdl.l[j] + mdl.u[j] + mdl.s[j] >= mdl.d[j] * mdl.t
     m.Demand = pyo.Constraint(m.V, rule=demand_rule)
 
-    # Σ_{k∈𝒜_α} u_k ≤ c_α · t⁽ⁿ⁾,        ∀ j∈NODES
+    # u_j ≤ c_j · t⁽ⁿ⁾,        ∀ j∈NODES
     def capacity_rule(mdl, j):
         return mdl.u[j] <= mdl.c[j] * mdl.t
     m.Capacity = pyo.Constraint(m.NODES, rule=capacity_rule)
@@ -462,7 +462,7 @@ def build_and_solve_multi_tier_tts(dataset: dict, disrupted: list[str], return_m
         return mdl.u[j] + mdl.s[j] >= mdl.d[j] * mdl.t
     m.Demand = pyo.Constraint(m.V, rule=demand_rule)
 
-    # Σ_{k∈𝒜_α} u_k ≤ c_α · t⁽ⁿ⁾,        ∀ j∈NODES
+    # u_j ≤ c_j · t⁽ⁿ⁾,        ∀ j∈NODES
     def capacity_rule(mdl, j):
         return mdl.u[j] <= mdl.c[j] * mdl.t
     m.Capacity = pyo.Constraint(m.NODES, rule=capacity_rule)

@@ -4,7 +4,27 @@
 
 # COMMAND ----------
 
-print('Hello, Databricks')
+# MAGIC %md
+# MAGIC # Appendix
+# MAGIC
+# MAGIC In this notebook...
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC <img src="images/multi-tier-ttr.png" alt="Multi-Tier TTR" width="600">
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC %md
+# MAGIC <img src="images/multi-tier-tts.png" alt="Multi-Tier TTS" width="600">
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
 
 # COMMAND ----------
 
