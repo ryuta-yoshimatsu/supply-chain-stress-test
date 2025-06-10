@@ -5,12 +5,22 @@
 
 ## Business Problem
 
-<img src='images/cartoon.png' width=800>
+Global disruptions from pandemics, wars, climate events, and cyber-attacks have exposed vulnerabilities, causing shortages, cost spikes, and reputational damage. Resilient supply chains help companies maintain service levels, capture market share when competitors falter, comply with regulations, satisfy investors’ ESG expectations, and protect revenue, margins, and brand credibility during crises.
+
+Stress testing simulates extreme but plausible shocks—supplier failures, port closures, demand swings, geopolitical sanctions, cyber breaches—to reveal hidden dependencies and single points of failure. Quantifying impacts on cost, capacity, and service enables prioritized mitigation plans, diversified sourcing, inventory buffers, and agile decision rules, strengthening adaptability under uncertainty for future events.
+
+This solution accelerator implements the approach proposed in a well-cited [paper](https://dspace.mit.edu/handle/1721.1/101782) that applies stress tests on a supply chain network using digital twins—virtual models built from real operational data. By simulating a range of disruption scenarios, businesses can assess potential impacts, identify vulnerabilities and make informed, proactive decisions.
+
+At the heart of the approach is the linear optimization problem where we aim to optimize the network configuration for a common metric.
+
 
 ## Reference Architecture
-IMAGE TO REFERENCE ARCHITECTURE
+
+<img src='images/cartoon.png' width=800>
+
 
 ## Authors
+
 <ryuta.yoshimatsu@databricks.com>, <luis.herrera@databricks.com>, <puneet.jain@databricks.com>
 
 ## Project support 
