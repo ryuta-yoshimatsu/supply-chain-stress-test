@@ -18,7 +18,7 @@
 # MAGIC - **Databricks Runtime Version:** 16.4 LTS ML (includes Apache Spark 3.5.2, Scala 2.12)
 # MAGIC - **Photon Acceleration:** Disabled (Photon boosts Apache Spark workloads; not all ML workloads will see an improvement)
 # MAGIC - **Driver Type:** Standard_DS4_v2 (28 GB Memory, 8 Cores)
-# MAGIC - **Worker Type:** Standard_E4d_v4 (32 GB Memory, 4 Cores, **memory optimized**)
+# MAGIC - **Worker Type:** Standard_E4d_v4 (32 GB Memory, 4 Cores, **Memory Optimized**)
 # MAGIC - **Number of Workers:** 4
 # MAGIC > **Note:** Performance may vary depending on the cluster size, node types, and workload characteristics. For large-scale distributed computation, ensure sufficient resources are allocated to avoid bottlenecks.
 

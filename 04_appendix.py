@@ -31,7 +31,7 @@
 # MAGIC %md
 # MAGIC ## Multi-Tier TTS Model
 # MAGIC
-# MAGIC The multi-tier time-to-survive (TTS) model asks: given a disruption at a specific node, how long can the network continue meeting demand with **no** lost sales? It employs the same directed-graph representation as the TTR model, but its linear program maximises the survival horizon, t, rather than minimising lost profit.
+# MAGIC The multi-tier time-to-survive (TTS) model asks: given a disruption at a specific node, how long can the network continue meeting demand with no lost sales? It employs the same directed-graph representation as the TTR model, but its linear program maximises the survival horizon, t, rather than minimising lost profit.
 # MAGIC
 # MAGIC **Constraints**: Identical to the TTR model except for the fourth, where no loss is allowed; demand must be fully satisfied.
 

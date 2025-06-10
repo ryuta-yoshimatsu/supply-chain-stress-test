@@ -5,7 +5,7 @@
 
 ## Business Problem
 
-<img src='https://github.com/ryuta-yoshimatsu/supply-chain-stress-test/blob/main/images/cartoon.png' width=800>
+<img src='images/cartoon.png' width=800>
 
 ## Reference Architecture
 IMAGE TO REFERENCE ARCHITECTURE
