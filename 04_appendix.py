@@ -15,7 +15,7 @@
 # MAGIC %md
 # MAGIC ## Multi-Tier TTR Model
 # MAGIC
-# MAGIC The multi-tier time-to-recover (TTR) model represents a supply chain as a directed graph of materials and production sites. For a disruption lasting t(n), it chooses production quantities (u), inter-tier flows (y) and lost sales (l) that minimise total weighted loss across all finished products. 
+# MAGIC The multi-tier time-to-recover (TTR) model represents a supply chain as a directed graph of materials and production sites. For a disruption lasting t, it chooses production quantities (u), inter-tier flows (y) and lost sales (l) that minimise total weighted loss across all finished products. 
 # MAGIC
 # MAGIC **Constraints**: (1) A bill-of-materials constraint limits each node’s output to the scarcest upstream material; (2) a flow-balance constraint caps shipments by on-hand inventory plus new production. (3) Disrupted nodes produce nothing. (4) Further constraints match cumulative demand, capturing unmet demand as loss, (5) and bound plant throughput by installed capacity. 
 # MAGIC

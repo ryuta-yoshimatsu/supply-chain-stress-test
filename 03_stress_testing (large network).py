@@ -7,7 +7,7 @@
 # MAGIC %md
 # MAGIC # Stress-Test Large Networks and Analyze the Results
 # MAGIC
-# MAGIC This notebook demonstrates how to perform stress testing on a large supply chain network. While the previous notebooks focused on a small network (35 nodes), modern supply chains often consist of tens of thousands of suppliers and sub-suppliers. To run comprehensive stress tests on such large-scale networks, a scalable setup is essential. We leverage distributed computation using Ray on Databricks to achieve this. This notebook covers network generation (1,700 nodes), Ray cluster setup, distributed optimization, and result analysis.
+# MAGIC This notebook demonstrates how to perform stress testing on a large supply chain network. While the previous notebooks focused on a small network (35 nodes), modern supply chains often consist of tens of thousands of suppliers and sub-suppliers. To run comprehensive stress tests on such large-scale networks, a scalable setup is essential. We leverage distributed computation using [Ray on Databricks](https://docs.databricks.com/aws/en/machine-learning/ray/) to achieve this. This notebook covers network generation (1,700 nodes), Ray cluster setup, distributed optimization, and result analysis.
 # MAGIC
 
 # COMMAND ----------
@@ -16,10 +16,14 @@
 # MAGIC ## Cluster Configuration
 # MAGIC This notebook was tested on the following Databricks cluster configuration:
 # MAGIC - **Databricks Runtime Version:** 16.4 LTS ML (includes Apache Spark 3.5.2, Scala 2.12)
-# MAGIC - **Photon Acceleration:** Disabled (Photon boosts Apache Spark workloads; not all ML workloads will see an improvement)
-# MAGIC - **Driver Type:** Standard_DS4_v2 (28 GB Memory, 8 Cores)
-# MAGIC - **Worker Type:** Standard_E4d_v4 (32 GB Memory, 4 Cores, **Memory Optimized**)
+# MAGIC - **Driver Type** 
+# MAGIC     - Azure: Standard_DS4_v2 (28 GB Memory, 8 Cores)
+# MAGIC     - AWS: m5d.2xlarge (32 GB Memory, 8 Cores)
+# MAGIC - **Worker Type** 
+# MAGIC     - Azure: Standard_E4d_v4 (32 GB Memory, 4 Cores)
+# MAGIC     - AWS: rd-fleet.xlarge (32 GB Memory, 4 Cores)
 # MAGIC - **Number of Workers:** 4
+# MAGIC - **Photon Acceleration:** Disabled (Photon boosts Apache Spark workloads; not all ML workloads will see an improvement)
 # MAGIC > **Note:** Performance may vary depending on the cluster size, node types, and workload characteristics. For large-scale distributed computation, ensure sufficient resources are allocated to avoid bottlenecks.
 
 # COMMAND ----------
@@ -46,8 +50,8 @@ import scripts.utils as utils
 
 # COMMAND ----------
 
-catalog = "supply_chain_stress_test"
-schema = "results"
+catalog = "supply_chain_stress_test" # Change here
+schema = "results"                   # Change here
 
 # Make sure that the catalog and the schema exist
 _ = spark.sql(f"CREATE CATALOG IF NOT EXISTS {catalog}") 
@@ -81,9 +85,9 @@ def get_min_max_nodes():
     try:
         import requests
         ctx = dbutils.notebook.entry_point.getDbutils().notebook().getContext()
-        host_name = ctx.tags().get("browserHostName").get()
+        host_name = ctx.browserHostName().get()
         host_token = ctx.apiToken().get()
-        cluster_id = ctx.tags().get("clusterId").get()
+        cluster_id = ctx.clusterId().get()
         response = requests.get(
             f'https://{host_name}/api/2.1/clusters/get?cluster_id={cluster_id}',
             headers={'Authorization': f'Bearer {host_token}'}
@@ -91,7 +95,9 @@ def get_min_max_nodes():
         if "autoscale" in response:
             return response['autoscale']["min_workers"], response['autoscale']["max_workers"]
     except Exception as e:
+        
         print(f"Warning: Could not fetch min/max nodes from Databricks context: {e}")
+
     return 1, response['num_workers']  # fallback for local/testing
 
 min_node, max_node = get_min_max_nodes()

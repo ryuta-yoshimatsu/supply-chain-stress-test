@@ -15,7 +15,9 @@
 # MAGIC ## Cluster Configuration
 # MAGIC This notebook was tested on the following Databricks cluster configuration:
 # MAGIC - **Databricks Runtime Version:** 16.4 LTS ML (includes Apache Spark 3.5.2, Scala 2.12)
-# MAGIC - **Single Node:** Standard_DS4_v2 (28 GB Memory, 8 Cores)
+# MAGIC - **Single Node** 
+# MAGIC     - Azure: Standard_DS4_v2 (28 GB Memory, 8 Cores)
+# MAGIC     - AWS: m5d.2xlarge (32 GB Memory, 8 Cores)
 # MAGIC - **Photon Acceleration:** Disabled (Photon boosts Apache Spark workloads; not all ML workloads will see an improvement)
 
 # COMMAND ----------
@@ -47,7 +49,7 @@ import scripts.utils as utils
 # N1: number of product nodes
 # N2: number of direct supplier nodes
 # N3: number of sub-supplier nodes
-dataset = utils.generate_data(N1=5, N2=10, N3=20)
+dataset = utils.generate_data(N1=5, N2=10, N3=20) # DO NOT CHANGE
 
 # COMMAND ----------
 
