@@ -28,7 +28,7 @@ Databricks is the ideal platform for building this solution. Key advantages incl
 
 ## Authors
 
-<ryuta.yoshimatsu@databricks.com>, <luis.herrera@databricks.com>, <puneet.jain@databricks.com>
+<ryuta.yoshimatsu@databricks.com>,  <luis.herrera@databricks.com>, <puneet.jain@databricks.com>
 
 ## Project support 
 
